@@ -46,22 +46,22 @@ public class MainFrame extends JFrame implements Observer  {
 		inputFile_browse_btn = new JButton("browse");
 		inputFile_browse_btn.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		inputFile_browse_btn.setBounds(353, 5, 101, 23);
-		//inputFile_browse_btn.addActionListener(new InputFile_browse_btn_ActionListener(this));
+		inputFile_browse_btn.addActionListener(new InputFile_browse_btn_ActionListener(this));
 		
 		outputFile_browse_btn = new JButton("browse");
 		outputFile_browse_btn.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		outputFile_browse_btn.setBounds(353, 39, 101, 23);
-		//outputFile_browse_btn.addActionListener(new OutputFile_browse_btn_ActionListener(this));
+		outputFile_browse_btn.addActionListener(new OutputFile_browse_btn_ActionListener(this));
 		
 		encode_btn = new JButton("encode file");
 		encode_btn.setFont(new Font("Tahoma", Font.BOLD, 11));
 		encode_btn.setBounds(242, 71, 101, 23);
-		//encode_btn.addActionListener(new Encode_btn_ActionListener(this));
+		encode_btn.addActionListener(new Encode_btn_ActionListener(this));
 		
 		decode_btn = new JButton("decode file");
 		decode_btn.setFont(new Font("Tahoma", Font.BOLD, 11));
 		decode_btn.setBounds(353, 71, 101, 23);
-		//decode_btn.addActionListener(new Decode_btn_ActionListener(this));
+		decode_btn.addActionListener(new Decode_btn_ActionListener(this));
 		
 		progress_bar = new JProgressBar(0,100);
 		progress_bar.setFocusable(false);

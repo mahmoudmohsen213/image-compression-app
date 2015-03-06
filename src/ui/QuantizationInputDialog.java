@@ -19,12 +19,13 @@ public class QuantizationInputDialog extends JDialog {
 	int parsedWidth;
 	int parsedHeight;
 	int parsedBitsNumber;
-	int selectedOption = 0;
+	int selectedOption;
 
 	public QuantizationInputDialog() {
 		setBounds(100, 100, 215, 150);
 		getContentPane().setLayout(null);
 		this.setTitle("Enter vector dimentions");
+		selectedOption = 0;
 		
 		JLabel lblWidth = new JLabel("Width:");
 		lblWidth.setBounds(10, 11, 60, 14);
