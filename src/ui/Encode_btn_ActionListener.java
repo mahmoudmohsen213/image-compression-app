@@ -16,13 +16,13 @@ private MainFrame parentFrame;
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-//		try{
-//			EncodingManager encodingManager = new EncodingManager(
-//					parentFrame.getInputFileName(), parentFrame.getOutputFileName(),
-//					parentFrame.getEncodingSelection(), parentFrame);
-//			encodingManager.start();
-//		} catch(Exception ex){
-//			JOptionPane.showMessageDialog(null, ex.getMessage());
-//		}
+		try{
+			EncodingManager encodingManager = new EncodingManager(
+					parentFrame.getInputFileName(), parentFrame.getOutputFileName(),
+					parentFrame.getEncodingSelection(), parentFrame);
+			encodingManager.start();
+		} catch(Exception ex){
+			JOptionPane.showMessageDialog(null, ex.getMessage());
+		}
 	}
 }
