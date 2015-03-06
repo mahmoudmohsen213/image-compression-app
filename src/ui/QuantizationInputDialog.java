@@ -7,19 +7,19 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import actionListeners.QuantizationInputDialog_cancel_btn_ActionListener;
-import actionListeners.QuantizationInputDialog_ok_btn_ActionListener;
-
 @SuppressWarnings("serial")
 public class QuantizationInputDialog extends JDialog {
+	public final static int CANCEL_OPTION = 0;
+	public final static int OK_OPTION = 1;
 	private JTextField width_txt;
 	private JTextField height_txt;
 	private JTextField bitsNumber_txt;
 	private JButton cancel_btn;
 	private JButton ok_btn;
-	private int parsedWidth;
-	private int parsedHeight;
-	private int parsedBitsNumber;
+	int parsedWidth;
+	int parsedHeight;
+	int parsedBitsNumber;
+	int selectedOption = 0;
 
 	public QuantizationInputDialog() {
 		setBounds(100, 100, 215, 150);
@@ -67,8 +67,9 @@ public class QuantizationInputDialog extends JDialog {
 		this.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 	}
 	
-	public void setParsedWidth(int width){
-		this.parsedWidth = width;
+	public int showDialog(){
+		this.setVisible(true);
+		return selectedOption;
 	}
 	
 	public int getParsedWidth(){
@@ -79,20 +80,12 @@ public class QuantizationInputDialog extends JDialog {
 		return width_txt.getText();
 	}
 	
-	public void setParsedHeight(int Height){
-		this.parsedHeight = Height;
-	}
-	
 	public int getParsedHeight(){
 		return parsedHeight;
 	}
 	
 	public String getEnteredHeight(){
 		return height_txt.getText();
-	}
-	
-	public void setParsedBitsNumber(int BitsNumber){
-		this.parsedBitsNumber = BitsNumber;
 	}
 	
 	public int getParsedBitsNumber(){

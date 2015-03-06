@@ -1,11 +1,9 @@
-package actionListeners;
+package ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JOptionPane;
-
-import ui.QuantizationInputDialog;
 
 public class QuantizationInputDialog_ok_btn_ActionListener implements
 		ActionListener {
@@ -19,9 +17,8 @@ public class QuantizationInputDialog_ok_btn_ActionListener implements
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		try{ 
-			parentDialog.setParsedHeight(
-					Integer.parseInt(
-							parentDialog.getEnteredHeight()));
+			parentDialog.parsedWidth = Integer.parseInt(
+					parentDialog.getEnteredWidth());
 		}
 		catch(NumberFormatException ex) {
 			JOptionPane.showMessageDialog(null, "Invalid parameter");
@@ -29,9 +26,8 @@ public class QuantizationInputDialog_ok_btn_ActionListener implements
 		}
 		
 		try{ 
-			parentDialog.setParsedHeight(
-					Integer.parseInt(
-							parentDialog.getEnteredHeight()));
+			parentDialog.parsedHeight =Integer.parseInt(
+					parentDialog.getEnteredHeight());
 		}
 		catch(NumberFormatException ex) {
 			JOptionPane.showMessageDialog(null, "Invalid parameter");
@@ -39,15 +35,15 @@ public class QuantizationInputDialog_ok_btn_ActionListener implements
 		}
 		
 		try{ 
-			parentDialog.setParsedBitsNumber(
-					Integer.parseInt(
-							parentDialog.getEnteredBitsNumber()));
+			parentDialog.parsedBitsNumber = Integer.parseInt(
+					parentDialog.getEnteredBitsNumber());
 		}
 		catch(NumberFormatException ex) {
 			JOptionPane.showMessageDialog(null, "Invalid parameter");
 			return;
 		}
 		
+		parentDialog.selectedOption = QuantizationInputDialog.OK_OPTION;
 		parentDialog.setVisible(false);
 	}
 }

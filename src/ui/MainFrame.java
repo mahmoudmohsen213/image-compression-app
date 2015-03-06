@@ -96,7 +96,7 @@ public class MainFrame extends JFrame implements Observer  {
 			encodingSelectionBox.addItem(encoderID);
 	}
 	
-	public void setInputFileName(String inputFileName){
+	void setInputFileName(String inputFileName){
 		inputFileName_txt.setText(inputFileName);
 	}
 	
@@ -104,7 +104,7 @@ public class MainFrame extends JFrame implements Observer  {
 		return inputFileName_txt.getText();
 	}
 	
-	public void setOutputFileName(String outputFileName){
+	void setOutputFileName(String outputFileName){
 		outputFileName_txt.setText(outputFileName);
 	}
 	

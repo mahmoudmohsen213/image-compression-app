@@ -1,11 +1,9 @@
-package actionListeners;
+package ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JFileChooser;
-
-import ui.MainFrame;
 
 public class OutputFile_browse_btn_ActionListener implements ActionListener {
 	private MainFrame parentFrame;
