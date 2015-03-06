@@ -20,6 +20,7 @@ public class VectorQuantizer extends Encoder {
 	@Override
 	public void encode(BufferedInputStream inputStream,
 			BufferedOutputStream outputStream, Object... args) throws Exception {
+		System.out.println("VectorQuantizer.encode()" + args.length);
 		// TODO Auto-generated method stub
 		
 //		BufferedImage inputImage = ImageIO.read(inputStream);
