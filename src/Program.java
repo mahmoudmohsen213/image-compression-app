@@ -1,5 +1,5 @@
 import ui.MainFrame;
-import inputHandlers.VectorQuantizationInputHandler;
+import inputHandlers.VectorQuantizationEncodingInputHandler;
 import encoders.VectorQuantizer;
 
 
@@ -14,6 +14,6 @@ public class Program {
 	
 	private static void loadClasses(){
 		new VectorQuantizer();
-		new VectorQuantizationInputHandler();
+		new VectorQuantizationEncodingInputHandler();
 	}
 }

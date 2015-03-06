@@ -1,5 +1,10 @@
 package managers;
 
+import inputHandlers.InputHandler;
+import inputHandlers.InputHandlerFactory;
+
+import java.io.File;
+
 import ui.MainFrame;
 
 public class DecodingManager extends Manager {
@@ -7,9 +12,28 @@ public class DecodingManager extends Manager {
 	public DecodingManager(String inputFileName, String outputFileName,
 			String encoderID, MainFrame mainFrame) throws Exception {
 		super(inputFileName, outputFileName, encoderID, mainFrame);
-		isGood = this.initialize();
+		isReady = this.initialize();
 	}
 
+	@Override
+	protected boolean initialize() throws Exception {
+		Object[] input = new Object[0];
+		InputHandler inputHandler = InputHandlerFactory.create(encoderID + ":Decode");
+		if(inputHandler != null)
+			input = inputHandler.getInput();
+		if(input == null)
+			return false;
+		
+		File tempFile = new File(inputFileName);
+		long inputSize = tempFile.length();
+		encodingParameters = new Object[input.length + 1];
+		encodingParameters[0] = new Long(inputSize);
+		for(int i=1;i<encodingParameters.length;++i)
+			encodingParameters[i] = input[i-1];
+		
+		return super.initialize();
+	}
+	
 	@Override
 	public void run() {
 		try {

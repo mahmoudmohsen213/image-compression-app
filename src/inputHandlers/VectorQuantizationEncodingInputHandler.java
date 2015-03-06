@@ -2,11 +2,11 @@ package inputHandlers;
 
 import ui.QuantizationInputDialog;
 
-public class VectorQuantizationInputHandler implements InputHandler {
+public class VectorQuantizationEncodingInputHandler implements InputHandler {
 	static{
 		try {
-			InputHandlerFactory.register("VectorQuantizer",
-					VectorQuantizationInputHandler.class.getConstructor());
+			InputHandlerFactory.register("VectorQuantizer:Encode",
+					VectorQuantizationEncodingInputHandler.class.getConstructor());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -20,8 +20,9 @@ public class VectorQuantizationInputHandler implements InputHandler {
 			input[0] = new Integer(inputDialog.getParsedWidth());
 			input[1] = new Integer(inputDialog.getParsedHeight());
 			input[2] = new Integer(inputDialog.getParsedBitsNumber());
+			return input;
 		}
 		
-		return new Object[0];
+		return null;
 	}
 }
