@@ -40,10 +40,10 @@ public class QuantizationVector {
 		if(v1.width != v2.width || v1.height != v2.height)
 			throw new RuntimeException("invalid arguments");
 		
-		double meanError = 0.0;
+		double error = 0.0;
 		for(int i=0;i<v1.width;++i)
 			for(int j=0;j<v1.height;++j)
-				meanError += (v1.getPixel(i, j)-v2.getPixel(i, j));
-		return meanError;
+				error += (v1.getPixel(i, j)-v2.getPixel(i, j));
+		return error;
 	}
 }
