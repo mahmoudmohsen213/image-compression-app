@@ -1,12 +1,12 @@
 package utilities;
 
 
-public class QuantizationVector {
+public class ImageVector {
 	private int width;
 	private int height;
 	private double vector[][];
 	
-	public QuantizationVector(int width, int height){
+	public ImageVector(int width, int height){
 		this.width = width;
 		this.height = height;
 		this.vector = new double[width][height];
@@ -20,7 +20,7 @@ public class QuantizationVector {
 		return vector[x][y];
 	}
 	
-	public void split(QuantizationVector v1, QuantizationVector v2){
+	public void split(ImageVector v1, ImageVector v2){
 		if(this.width != v1.width || this.height != v1.height)
 			throw new RuntimeException("invalid arguments");
 		
@@ -36,7 +36,7 @@ public class QuantizationVector {
 	}
 	
 	public static double calculateError(
-			QuantizationVector v1, QuantizationVector v2){
+			ImageVector v1, ImageVector v2){
 		if(v1.width != v2.width || v1.height != v2.height)
 			throw new RuntimeException("invalid arguments");
 		
