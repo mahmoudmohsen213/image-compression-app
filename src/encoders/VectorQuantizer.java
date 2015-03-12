@@ -31,7 +31,7 @@ public class VectorQuantizer extends Encoder {
 	@Override
 	public void encode(BufferedInputStream inputStream,
 			BufferedOutputStream outputStream, Object... args) throws Exception {
-		System.out.println("VectorQuantizer.encode()  " + args.length);
+		System.out.println("VectorQuantizer.encode()::begin");
 		BufferedImage inputImage = ImageIO.read(inputStream);
 		
 		long inputSize = (Long)args[0];
@@ -56,12 +56,14 @@ public class VectorQuantizer extends Encoder {
 		this.Quantize(codebook, clusteredImage);
 		// removing unused quantization vector
 		this.CleanCodebook(codebook);
+		System.out.println("VectorQuantizer.encode()::end");
 	}
 
 	@Override
 	public void decode(BufferedInputStream inputStream,
 			BufferedOutputStream outputStream, Object... args) throws Exception {
-		System.out.println("VectorQuantizer.decode()  " + args.length);
+		System.out.println("VectorQuantizer.decode()::begin");
+		System.out.println("VectorQuantizer.decode()::end");
 	}
 	
 	private ArrayList<ImageVector> clusterImage(BufferedImage inputImage){
@@ -109,16 +111,17 @@ public class VectorQuantizer extends Encoder {
 			// to its image vectors
 			this.OptimizeVectors(codebook, clusteredImage);
 			
-			for(int i=0;i<codebook.size();++i){
+			int oldSize = codebook.size();
+			for(int i=0;i<oldSize;++i){
 				ImageVector vector1 = new ImageVector(vectorWidth, vectorHeight);
 				ImageVector vector2 = new ImageVector(vectorWidth, vectorHeight);
 				
 				// splitting the current vector
-				ImageVector currentVector = codebook.get(i).first;
+				ImageVector currentVector = codebook.get(0).first;
 				currentVector.split(vector1, vector2);
 				
 				// removing the current vector
-				codebook.remove(i);
+				codebook.remove(0);
 				// adding the new vectors
 				codebook.add(new Pair<ImageVector, ArrayList<Integer>>(
 						vector1, new ArrayList<Integer>()));
@@ -139,12 +142,51 @@ public class VectorQuantizer extends Encoder {
 	private void DistributeVectors(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		// mapping the quantization vectors to the image vectors
+		for(int i=0;i<codebook.size();++i)
+			codebook.get(i).second.clear();
+		
+		for(int i=0;i<clusteredImage.size();++i){
+			long error = Long.MAX_VALUE;
+			int bestVectorIndex = 0;
+			for(int j=0;j<codebook.size();j++){
+				long tempError = ImageVector.calculateError(
+						clusteredImage.get(i),codebook.get(j).first);
+				if(tempError < error){
+					error = tempError;
+					bestVectorIndex = j;
+				}
+			}
+			
+			codebook.get(bestVectorIndex).second.add(i);
+		}
 	}
 	
 	private void OptimizeVectors(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		// optimize each quantization vector according
 		// to its image vectors
+		for(int i=0;i<codebook.size();++i){
+			ImageVector tempImageVector = 
+					new ImageVector(vectorWidth, vectorHeight);
+			for(int j=0;j<codebook.get(i).second.size();++j){
+				ImageVector subImage = clusteredImage.get(codebook.get(i).second.get(j));
+				for(int x=0;x<vectorWidth;++x){
+					for(int y=0;y<vectorHeight;++y){
+						tempImageVector.setPixel(x, y,
+								tempImageVector.getPixel(x, y) +
+								subImage.getPixel(x, y));
+					}
+				}
+			}
+			
+			for(int x=0;x<vectorWidth;++x){
+				for(int y=0;y<vectorHeight;++y){
+					codebook.get(i).first.setPixel(x, y,
+							tempImageVector.getPixel(x, y) /
+							codebook.get(i).second.size());
+				}
+			}
+		}
 	}
 	
 	private void CleanCodebook(ArrayList<Pair<ImageVector,
