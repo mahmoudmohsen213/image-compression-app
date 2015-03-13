@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import utilities.BitInputStream;
+import utilities.BitOutputStream;
 import utilities.ImageVector;
 import utilities.Pair;
 
@@ -24,26 +26,27 @@ public class VectorQuantizer extends Encoder {
 	private int vectorWidth;
 	private int vectorHeight;
 	private int bitsNumber;
-	private int levelsNumber;
-	private int clusteredImageWidth;
-	private int clusteredImageHeight;
+	private int codebookSize;
+	private int imageWidth;
+	private int imageHeight;
 	
 	@Override
 	public void encode(BufferedInputStream inputStream,
 			BufferedOutputStream outputStream, Object... args) throws Exception {
-		System.out.println("VectorQuantizer.encode()::begin");
+		setChanged();
+		notifyObservers(0);
 		BufferedImage inputImage = ImageIO.read(inputStream);
+		BitOutputStream bitOutputStream = new BitOutputStream(outputStream);
 		
-		long inputSize = (Long)args[0];
 		vectorWidth = (Integer)args[1];
 		vectorHeight = (Integer)args[2];
+		imageWidth = (inputImage.getWidth()/vectorWidth)*vectorWidth;
+		imageHeight = (inputImage.getHeight()/vectorHeight)*vectorHeight;
 		bitsNumber = (Integer)args[3];
-		levelsNumber = 1<<bitsNumber;
+		codebookSize = 1<<bitsNumber;
 		
 		// dividing the input image into a list of clusters
 		ArrayList<ImageVector> clusteredImage = clusterImage(inputImage);
-		clusteredImageWidth = inputImage.getWidth()/vectorWidth;
-		clusteredImageHeight = inputImage.getHeight()/vectorHeight;
 		
 		// releasing unnecessary memory usage
 		inputImage = null;
@@ -56,30 +59,122 @@ public class VectorQuantizer extends Encoder {
 		this.Quantize(codebook, clusteredImage);
 		// removing unused quantization vector
 		this.CleanCodebook(codebook);
-		System.out.println("VectorQuantizer.encode()::end");
+		codebookSize = codebook.size();
+		
+		// array to store the code of each vector in the image
+		int codeArray[] = new int[clusteredImage.size()];
+		for(int i=0;i<codebook.size();++i)
+			for(Integer index : codebook.get(i).second)
+				codeArray[index] = i;
+		
+		int counter = 0;
+		bitOutputStream.writeInt(imageWidth);
+		bitOutputStream.writeInt(imageHeight);
+		bitOutputStream.writeInt(vectorWidth);
+		bitOutputStream.writeInt(vectorHeight);
+		bitOutputStream.writeInt(bitsNumber);
+		bitOutputStream.writeInt(codebook.size());
+		for(Pair<ImageVector, ArrayList<Integer>> entry : codebook){
+			for(int i=0;i<vectorWidth;++i)
+				for(int j=0;j<vectorHeight;++j)
+					bitOutputStream.writeByte((byte) entry.first.getPixel(i, j));
+			
+			setChanged();
+			notifyObservers(80 + (((++counter)*10)*codebookSize));
+		}
+		
+		for(int i=0;i<codeArray.length;++i){
+			for(int j=bitsNumber-1;j>=0;--j)
+				bitOutputStream.write((codeArray[i]>>j)&1);
+			
+			setChanged();
+			notifyObservers(90 + ((i*10)*codeArray.length));
+		}
+		
+		inputStream.close();
+		bitOutputStream.close();
+		setChanged();
+		notifyObservers(100);
+		
+		//System.out.println(bitsNumber);
+		//System.out.println(imageWidth + "  " + imageHeight);
+		//System.out.println(vectorWidth + "  " + vectorHeight);
+		//System.out.println(clusteredImage.size());
+		//System.out.println(codeArray.length);
 	}
 
 	@Override
 	public void decode(BufferedInputStream inputStream,
 			BufferedOutputStream outputStream, Object... args) throws Exception {
-		System.out.println("VectorQuantizer.decode()::begin");
-		System.out.println("VectorQuantizer.decode()::end");
+		setChanged();
+		notifyObservers(0);
+		
+		BitInputStream bitInputStream = new BitInputStream(inputStream);
+		imageWidth = bitInputStream.readInt();
+		imageHeight = bitInputStream.readInt();
+		vectorWidth = bitInputStream.readInt();
+		vectorHeight = bitInputStream.readInt();
+		bitsNumber = bitInputStream.readInt();
+		codebookSize = bitInputStream.readInt();
+		BufferedImage image = new BufferedImage(imageWidth,
+				imageHeight, BufferedImage.TYPE_INT_RGB);
+		
+		ImageVector codebook[] = new ImageVector[codebookSize];
+		for(int k=0;k<codebookSize;++k){
+			ImageVector entry = new ImageVector(vectorWidth, vectorHeight);
+			for(int i=0;i<vectorWidth;++i)
+				for(int j=0;j<vectorHeight;++j)
+					entry.setPixel(i, j, bitInputStream.readByte());
+			codebook[k] = entry;
+		}
+		
+		for(int clusterXCoord = 0; 
+				clusterXCoord<imageWidth; 
+				clusterXCoord+=vectorWidth){
+			for(int clusterYCoord = 0; 
+					clusterYCoord<imageHeight; 
+					clusterYCoord+=vectorHeight){
+				String bitString = bitInputStream.readBitString(bitsNumber);
+				int index = Integer.parseInt(bitString, 2);
+				for(int i = 0; i<vectorWidth;++i)
+					for(int j=0;j<vectorHeight;++j){
+						int rgb = (int) codebook[index].getPixel(i, j);
+						rgb = ((rgb<<16)|(rgb<<8)|(rgb));
+						
+						//if(i == 0 && j == 0 && clusterXCoord == 0 && clusterYCoord == 0)
+						//	System.out.println(rgb + "  " + Integer.toBinaryString(rgb)
+						//			+ "  " + (int) codebook[index].getPixel(i, j));
+						
+						image.setRGB(i+clusterXCoord, j+clusterYCoord,rgb);
+					}
+			}
+		}
+		
+		//System.out.println("here  " + (image.getRGB(0, 0)&(16777215)));
+		
+		ImageIO.write(image, "jpg", outputStream);
+		bitInputStream.close();
+		outputStream.close();
+		setChanged();
+		notifyObservers(100);
 	}
 	
 	private ArrayList<ImageVector> clusterImage(BufferedImage inputImage){
 		// dividing the input image into a list of clusters
 		ArrayList<ImageVector> clusteredImage = new ArrayList<ImageVector>();
 		for(int clusterXCoord = 0; 
-				clusterXCoord<inputImage.getWidth(); 
+				clusterXCoord<imageWidth; 
 				clusterXCoord+=vectorWidth){
 			for(int clusterYCoord = 0; 
-					clusterYCoord<inputImage.getHeight(); 
+					clusterYCoord<imageHeight; 
 					clusterYCoord+=vectorHeight){
 				ImageVector cluster = new ImageVector(vectorWidth, vectorHeight);
 				for(int i = 0; i<vectorWidth;++i){
 					for(int j=0;j<vectorHeight;++j){
-						cluster.setPixel(i, j, inputImage.getRGB(
-								i+clusterXCoord, j+clusterYCoord));
+						int rgb = inputImage.getRGB(
+								i+clusterXCoord, j+clusterYCoord);
+						rgb = ((((rgb>>16)&255)+((rgb>>8)&255)+(rgb&255))/3);
+						cluster.setPixel(i, j, rgb);
 					}
 				}
 				clusteredImage.add(cluster);
@@ -104,7 +199,9 @@ public class VectorQuantizer extends Encoder {
 	private void Quantize(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		
-		while(codebook.size()<levelsNumber){
+		while(codebook.size()<codebookSize){
+			setChanged();
+			notifyObservers((codebook.size()*60)/codebookSize);
 			// mapping the quantization vectors to the image vectors
 			this.DistributeVectors(codebook, clusteredImage);
 			// optimize each quantization vector according
@@ -130,12 +227,14 @@ public class VectorQuantizer extends Encoder {
 			}
 		}
 		
-		for(int i=0;i<10;i++){
+		for(int i=0;i<5;i++){
 			// mapping the quantization vectors to the image vectors
 			this.DistributeVectors(codebook, clusteredImage);
 			// optimize each quantization vector according
 			// to its image vectors
 			this.OptimizeVectors(codebook, clusteredImage);
+			setChanged();
+			notifyObservers(61+(i<<2));
 		}
 	}
 	
