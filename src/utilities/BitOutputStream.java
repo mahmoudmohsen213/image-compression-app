@@ -36,6 +36,11 @@ public class BitOutputStream extends OutputStream {
 			this.write((outChar>>i)&1);
 	}
 	
+	public void writeInt(int outInt) throws IOException{
+		for(int i=0;i<32;++i)
+			this.write((outInt>>i)&1);
+	}
+	
 	public void writeBitString(String outStr) throws IOException{
 		char tempChar;
 		for(int i=0;i<outStr.length();++i){

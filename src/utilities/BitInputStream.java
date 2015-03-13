@@ -79,6 +79,19 @@ public class BitInputStream extends InputStream {
 		return inChar;
 	}
 	
+	public int readInt() throws IOException{
+		int inInt = 0;
+		int tempBit;
+		for(int i=0;i<32;++i){
+			tempBit = this.read();
+			if(tempBit == -1)
+				return inInt;
+			inInt |= (tempBit<<i);
+		}
+		
+		return inInt;
+	}
+	
 	public String readBitString(int siz) throws IOException{
 		String inStr = "";
 		int tempBit;
