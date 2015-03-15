@@ -3,6 +3,7 @@ package encoders;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
@@ -55,10 +56,12 @@ public class VectorQuantizer extends Encoder {
 		// to which each quantization vector map
 		ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook =
 				this.initializeCodebook();
+		
 		// building the codebook
-		this.Quantize(codebook, clusteredImage);
+		this.quantize(codebook, clusteredImage);
+		
 		// removing unused quantization vector
-		this.CleanCodebook(codebook);
+		this.cleanCodebook(codebook);
 		codebookSize = codebook.size();
 		
 		// array to store the code of each vector in the image
@@ -77,7 +80,7 @@ public class VectorQuantizer extends Encoder {
 		for(Pair<ImageVector, ArrayList<Integer>> entry : codebook){
 			for(int i=0;i<vectorWidth;++i)
 				for(int j=0;j<vectorHeight;++j)
-					bitOutputStream.writeByte((byte) entry.first.getPixel(i, j));
+					bitOutputStream.writeChar((char) entry.first.getPixel(i, j));
 			
 			setChanged();
 			notifyObservers(80 + (((++counter)*10)*codebookSize));
@@ -95,12 +98,6 @@ public class VectorQuantizer extends Encoder {
 		bitOutputStream.close();
 		setChanged();
 		notifyObservers(100);
-		
-		//System.out.println(bitsNumber);
-		//System.out.println(imageWidth + "  " + imageHeight);
-		//System.out.println(vectorWidth + "  " + vectorHeight);
-		//System.out.println(clusteredImage.size());
-		//System.out.println(codeArray.length);
 	}
 
 	@Override
@@ -124,7 +121,7 @@ public class VectorQuantizer extends Encoder {
 			ImageVector entry = new ImageVector(vectorWidth, vectorHeight);
 			for(int i=0;i<vectorWidth;++i)
 				for(int j=0;j<vectorHeight;++j)
-					entry.setPixel(i, j, bitInputStream.readByte());
+					entry.setPixel(i, j, bitInputStream.readChar());
 			codebook[k] = entry;
 		}
 		
@@ -140,17 +137,10 @@ public class VectorQuantizer extends Encoder {
 					for(int j=0;j<vectorHeight;++j){
 						int rgb = (int) codebook[index].getPixel(i, j);
 						rgb = ((rgb<<16)|(rgb<<8)|(rgb));
-						
-						//if(i == 0 && j == 0 && clusterXCoord == 0 && clusterYCoord == 0)
-						//	System.out.println(rgb + "  " + Integer.toBinaryString(rgb)
-						//			+ "  " + (int) codebook[index].getPixel(i, j));
-						
 						image.setRGB(i+clusterXCoord, j+clusterYCoord,rgb);
 					}
 			}
 		}
-		
-		//System.out.println("here  " + (image.getRGB(0, 0)&(16777215)));
 		
 		ImageIO.write(image, "jpg", outputStream);
 		bitInputStream.close();
@@ -173,6 +163,7 @@ public class VectorQuantizer extends Encoder {
 					for(int j=0;j<vectorHeight;++j){
 						int rgb = inputImage.getRGB(
 								i+clusterXCoord, j+clusterYCoord);
+						// converting to grey scale
 						rgb = ((((rgb>>16)&255)+((rgb>>8)&255)+(rgb&255))/3);
 						cluster.setPixel(i, j, rgb);
 					}
@@ -196,17 +187,18 @@ public class VectorQuantizer extends Encoder {
 		return codebook;
 	}
 	
-	private void Quantize(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
+	private void quantize(ArrayList<Pair<ImageVector,
+			ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		
 		while(codebook.size()<codebookSize){
 			setChanged();
 			notifyObservers((codebook.size()*60)/codebookSize);
 			// mapping the quantization vectors to the image vectors
-			this.DistributeVectors(codebook, clusteredImage);
+			this.distributeVectors(codebook, clusteredImage);
 			// optimize each quantization vector according
 			// to its image vectors
-			this.OptimizeVectors(codebook, clusteredImage);
+			this.optimizeVectors(codebook, clusteredImage);
 			
 			int oldSize = codebook.size();
 			for(int i=0;i<oldSize;++i){
@@ -229,16 +221,17 @@ public class VectorQuantizer extends Encoder {
 		
 		for(int i=0;i<5;i++){
 			// mapping the quantization vectors to the image vectors
-			this.DistributeVectors(codebook, clusteredImage);
+			this.distributeVectors(codebook, clusteredImage);
 			// optimize each quantization vector according
 			// to its image vectors
-			this.OptimizeVectors(codebook, clusteredImage);
+			this.optimizeVectors(codebook, clusteredImage);
 			setChanged();
 			notifyObservers(61+(i<<2));
 		}
 	}
 	
-	private void DistributeVectors(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
+	private void distributeVectors(ArrayList<Pair<ImageVector,
+			ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		// mapping the quantization vectors to the image vectors
 		for(int i=0;i<codebook.size();++i)
@@ -260,7 +253,8 @@ public class VectorQuantizer extends Encoder {
 		}
 	}
 	
-	private void OptimizeVectors(ArrayList<Pair<ImageVector, ArrayList<Integer>>> codebook,
+	private void optimizeVectors(ArrayList<Pair<ImageVector,
+			ArrayList<Integer>>> codebook,
 			ArrayList<ImageVector> clusteredImage){
 		// optimize each quantization vector according
 		// to its image vectors
@@ -278,6 +272,9 @@ public class VectorQuantizer extends Encoder {
 				}
 			}
 			
+			if(codebook.get(i).second.size() == 0)
+				continue;
+			
 			for(int x=0;x<vectorWidth;++x){
 				for(int y=0;y<vectorHeight;++y){
 					codebook.get(i).first.setPixel(x, y,
@@ -288,11 +285,59 @@ public class VectorQuantizer extends Encoder {
 		}
 	}
 	
-	private void CleanCodebook(ArrayList<Pair<ImageVector,
+	private void cleanCodebook(ArrayList<Pair<ImageVector,
 			ArrayList<Integer>>> codebook){
 		// removing unused quantization vector
 		for(int i = codebook.size()-1;i>=0;--i)
 			if(codebook.get(i).second.size() == 0)
 				codebook.remove(i);
+	}
+	
+	@SuppressWarnings("unused")
+	private void dumpCodebook(ArrayList<Pair<ImageVector,
+			ArrayList<Integer>>> codebook, String filePath) throws Exception{
+		FileWriter writer = new FileWriter(filePath);
+		for(int i=0;i<codebook.size();++i){
+			writer.write("vector " + i + ":\n");
+			for(int x=0;x<vectorWidth;++x){
+				for(int y=0;y<vectorHeight;++y)
+					writer.write(codebook.get(i).first.getPixel(x, y) + "\t");
+				writer.write("\n");
+			}
+			writer.write("\n\n\n");
+		}
+		writer.close();
+	}
+	
+	@SuppressWarnings("unused")
+	private void dumpCodebook(ImageVector codebook[], String filePath) throws Exception{
+		FileWriter writer = new FileWriter(filePath);
+		for(int i=0;i<codebook.length;++i){
+			writer.write("vector " + i + ":\n");
+			for(int x=0;x<vectorWidth;++x){
+				for(int y=0;y<vectorHeight;++y)
+					writer.write(codebook[i].getPixel(x, y) + "\t");
+				writer.write("\n");
+			}
+			writer.write("\n\n\n");
+		}
+		writer.close();
+	}
+	
+	@SuppressWarnings("unused")
+	private void dumpClusteredImage(ArrayList<ImageVector> clusteredImage,
+			String filePath) throws Exception{
+		FileWriter writer = new FileWriter(filePath);
+		for(int i=0;i<clusteredImage.size();++i){
+			writer.write("vector " + i + ":\n");
+			for(int x=0;x<vectorWidth;++x){
+				for(int y=0;y<vectorHeight;++y)
+					writer.write(clusteredImage.get(i).getPixel(x, y) + "\t");
+				writer.write("\n");
+			}
+			writer.write("\n\n\n");
+		}
+		
+		writer.close();
 	}
 }
